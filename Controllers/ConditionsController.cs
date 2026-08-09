@@ -1,4 +1,3 @@
-using InfluxDB.Client.Writes;
 using Microsoft.AspNetCore.Mvc;
 using weatherAPI.Models;
 using weatherAPI.Services;
@@ -7,14 +6,10 @@ namespace weatherAPI.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class ConditionsController : ControllerBase
+public class ConditionsController(InfluxDbService influxDbService, ILogger<ConditionsController> logger) : ControllerBase
 {
-    private readonly InfluxDbService _influxDbService;
-
-    public ConditionsController(InfluxDbService influxDbService)
-    {
-        _influxDbService = influxDbService;
-    }
+    private readonly InfluxDbService _influxDbService = influxDbService;
+    private readonly ILogger<ConditionsController> _logger = logger;
 
     [HttpPost]
     public async Task<IActionResult> Post([FromBody] Conditions conditions)
@@ -24,18 +19,36 @@ public class ConditionsController : ControllerBase
             return BadRequest("Invalid data.");
         }
 
-        _influxDbService.Write(write =>
+        try
         {
-            var point = PointData
-                .Measurement("weather_conditions")
-                .Tag("source", "weather_station")
-                .Field("temperature", "conditions.Temperature")
-                .Field("humidity", conditions.Humidity)
-                .Timestamp(conditions.Timestamp, InfluxDB.Client.Api.Domain.WritePrecision.S);
+            await _influxDbService.WriteConditionsAsync(conditions);
+            return Ok("Conditions written to database.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write weather conditions to InfluxDB");
 
-            write.WritePoint(point, "my-bucket", "my-org");
-        });
+            return StatusCode(500, "An error occurred while processing your request.");
+        }
+    }
+    [HttpGet]
+    public async Task<ActionResult<List<Conditions>>> GetConditionsByTimestampRange([FromQuery] DateTime start, [FromQuery] DateTime end)
+    {
+        if (start >= end)
+        {
+            return BadRequest("Start time must be earlier than end time.");
+        }
 
-        return Ok("Conditions written to database.");
+        try
+        {
+            var results = await _influxDbService.QueryAsync(start, end);
+
+            return Ok(results); // Assumes results is a structured object or DTO
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve weather conditions from InfluxDB.");
+            return StatusCode(500, "An error occurred while processing your request.");
+        }
     }
 }

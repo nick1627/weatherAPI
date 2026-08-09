@@ -1,26 +1,65 @@
-using InfluxDB.Client;
+using InfluxDB3.Client;
+using InfluxDB3.Client.Config;
+using Microsoft.Extensions.Options;
+using weatherAPI.Mappers;
 using weatherAPI.Models;
-using InfluxDB.Client.Api.Domain;
-using InfluxDB.Client.Writes;
+using WeatherApi.Options;
 
 namespace weatherAPI.Services;
 
 public class InfluxDbService
 {
     private readonly InfluxDBClient _client;
-    private readonly string _bucket;
-    private readonly string _org;
 
-    public InfluxDbService(string url, string token, string org, string bucket)
+    public InfluxDbService(IOptions<InfluxDbOptions> options)
     {
-        _client = new InfluxDBClient(url, token);
-        _bucket = bucket;
-        _org = org;
+        var influxOptions = options.Value;
+        var clientConfig = new ClientConfig
+        {
+            Host = influxOptions.Url,
+            Token = influxOptions.Token,
+            Database = influxOptions.Database
+        };
+        _client = new InfluxDBClient(clientConfig);
     }
 
-    public void Write(Action<WriteApi> action)
+    public async Task WriteConditionsAsync(Conditions conditions)
     {
-        using var write = _client.GetWriteApi();
-        action(write);
+        var point = PointMapper.MapConditions(conditions);
+        await _client.WritePointAsync(point);
+    }
+
+    public async Task<List<Conditions>> QueryAsync(DateTime start, DateTime end)
+    {
+        const string queryString = """
+        SELECT *
+        FROM weather_conditions
+        WHERE time >= $start AND time < $end
+        ORDER BY time
+        """;
+
+        var parameters = new Dictionary<string, object>
+        {
+            ["start"] = start,
+            ["end"] = end
+        };
+
+        var results = new List<Conditions>();
+
+        await foreach (var row in _client.Query(queryString, namedParameters: parameters))
+        {
+            results.Add(new Conditions
+            {
+                Timestamp = (DateTime)row[0]!,
+                Temperature = Convert.ToSingle(row[1]),
+                Pressure = Convert.ToSingle(row[2]),
+                Humidity = Convert.ToSingle(row[3]),
+                Windspeed = Convert.ToSingle(row[4]),
+                WindDirection = Convert.ToSingle(row[5]),
+                Rainfall = Convert.ToSingle(row[6])
+            });
+        }
+
+        return results;
     }
 }

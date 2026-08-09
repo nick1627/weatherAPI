@@ -1,0 +1,22 @@
+services:
+  influxdb:
+    image: influxdb:3.9.1-core
+    container_name: weatherapi-influxdb
+
+    command:
+      - influxdb3
+      - serve
+      - --node-id=node0
+      - --object-store=file
+      - --data-dir=/var/lib/influxdb3/data
+
+    ports:
+      - "8181:8181"
+
+    volumes:
+      - influxdb-data:/var/lib/influxdb3/data
+
+    restart: unless-stopped
+
+volumes:
+  influxdb-data:
