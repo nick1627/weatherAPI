@@ -8,15 +8,15 @@ public class Conditions
     public DateTime Timestamp { get; set; }
     [SwaggerSchema(Description = "Temperature in degrees Celsius")]
 
-    public float Temperature { get; set; }
+    public double Temperature { get; set; }
     [SwaggerSchema(Description = "Pressure in Pascals")]
-    public float Pressure { get; set; }
+    public double Pressure { get; set; }
     [SwaggerSchema(Description = "Relative humidity")]
-    public float Humidity { get; set; }
+    public double Humidity { get; set; }
     [SwaggerSchema(Description = "Windspeed in m/s")]
-    public float Windspeed { get; set; }
+    public double Windspeed { get; set; }
     [SwaggerSchema(Description = "Wind direction bearing in degrees")]
-    public float WindDirection { get; set; }
+    public double WindDirection { get; set; }
     [SwaggerSchema(Description = "Rainfall in millimetres")]
-    public float Rainfall { get; set; }
+    public double Rainfall { get; set; }
 }

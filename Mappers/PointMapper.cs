@@ -10,8 +10,12 @@ public static class PointMapper
         return PointData
             .Measurement("weather_conditions")
             .SetTag("source", "weather_station")
-            .SetField("temperature", "conditions.Temperature")
+            .SetField("temperature", conditions.Temperature)
+            .SetField("pressure", conditions.Pressure)
             .SetField("humidity", conditions.Humidity)
+            .SetField("windspeed", conditions.Windspeed)
+            .SetField("wind_direction", conditions.WindDirection)
+            .SetField("rainfall", conditions.Rainfall)
             .SetTimestamp(conditions.Timestamp);
     }
 }

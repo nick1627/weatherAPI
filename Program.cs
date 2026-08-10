@@ -1,12 +1,18 @@
 using weatherAPI.Services;
-using WeatherApi.Options;
+using weatherAPI.Options;
+using weatherAPI.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c => c.EnableAnnotations());
+builder.Services.AddSwaggerGen(options =>
+{
+    options.EnableAnnotations();
+    options.ParameterFilter<WeatherTimestampParameterFilter>();
+}
+);
 
 builder.Services.Configure<InfluxDbOptions>
 (

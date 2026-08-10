@@ -3,7 +3,7 @@ using InfluxDB3.Client.Config;
 using Microsoft.Extensions.Options;
 using weatherAPI.Mappers;
 using weatherAPI.Models;
-using WeatherApi.Options;
+using weatherAPI.Options;
 
 namespace weatherAPI.Services;
 
@@ -40,23 +40,25 @@ public class InfluxDbService
 
         var parameters = new Dictionary<string, object>
         {
-            ["start"] = start,
-            ["end"] = end
+            ["start"] = start.ToUniversalTime().ToString("o"),
+            ["end"] = end.ToUniversalTime().ToString("o")
         };
 
         var results = new List<Conditions>();
 
-        await foreach (var row in _client.Query(queryString, namedParameters: parameters))
+        await foreach (var row in _client.QueryPoints(queryString, namedParameters: parameters))
         {
             results.Add(new Conditions
             {
-                Timestamp = (DateTime)row[0]!,
-                Temperature = Convert.ToSingle(row[1]),
-                Pressure = Convert.ToSingle(row[2]),
-                Humidity = Convert.ToSingle(row[3]),
-                Windspeed = Convert.ToSingle(row[4]),
-                WindDirection = Convert.ToSingle(row[5]),
-                Rainfall = Convert.ToSingle(row[6])
+                Timestamp = DateTime.UnixEpoch.AddTicks(
+                    (long)(row.GetTimestamp()!.Value / 100)
+                ),
+                Temperature = row.GetField<double>("temperature")!.Value,
+                Pressure = row.GetField<double>("pressure")!.Value,
+                Humidity = row.GetField<double>("humidity")!.Value,
+                Windspeed = row.GetField<double>("windspeed")!.Value,
+                WindDirection = row.GetField<double>("wind_direction")!.Value,
+                Rainfall = row.GetField<double>("rainfall")!.Value
             });
         }
 

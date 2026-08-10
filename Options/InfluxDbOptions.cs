@@ -1,4 +1,4 @@
-namespace WeatherApi.Options;
+namespace weatherAPI.Options;
 
 public class InfluxDbOptions
 {
