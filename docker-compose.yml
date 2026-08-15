@@ -1,22 +1,28 @@
 services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: weather-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      WeatherApi__InfluxDb__Url: http://influxdb:8181
+      WeatherApi__InfluxDb__Token: ${INFLUXDB_TOKEN}
+      WeatherApi__InfluxDb__Database: ${INFLUXDB_DATABASE}
+    depends_on:
+      - influxdb
   influxdb:
-    image: influxdb:3.9.1-core
-    container_name: weatherapi-influxdb
-
+    image: influxdb:3.11.1-core
+    container_name: weather-influxdb
     command:
       - influxdb3
       - serve
-      - --node-id=node0
+      - --node-id=weather-pi
       - --object-store=file
       - --data-dir=/var/lib/influxdb3/data
-
-    ports:
-      - "8181:8181"
-
     volumes:
-      - influxdb-data:/var/lib/influxdb3/data
-
+      - /opt/influxdb/data:/var/lib/influxdb3/data
     restart: unless-stopped
-
-volumes:
-  influxdb-data:

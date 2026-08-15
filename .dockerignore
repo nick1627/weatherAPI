@@ -6,3 +6,4 @@ obj/
 Dockerfile
 docker-compose.yml
 README.md
+appSettings.Development.json
